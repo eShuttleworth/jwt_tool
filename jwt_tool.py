@@ -20,6 +20,7 @@ import random
 from urllib.parse import urljoin, urlparse
 import argparse
 from datetime import datetime
+from time import sleep
 import configparser
 from http.cookies import SimpleCookie
 from collections import OrderedDict
@@ -146,6 +147,7 @@ def sendToken(token, cookiedict, track, headertoken="", postdata=None):
         for eachHeader in headertoken:
             headerName, headerVal = eachHeader.split(":",1)
             headers[headerName] = headerVal.lstrip(" ")
+
     try:
         if config['services']['redir'] == "True":
             redirBool = True
@@ -204,6 +206,9 @@ def jwtOut(token, fromMod, desc=""):
             cookietoken = p.subn(token, config['argvals']['cookies'], 0)
         else:
             cookietoken = [config['argvals']['cookies'],0]
+
+        if throttle:
+            sleep(int(throttle))
 
         if config['argvals']['headerloc'] == "headers":
             headertoken = [[],0]
@@ -1883,6 +1888,8 @@ if __name__ == '__main__':
                         help="JSON Web Key Store for Asymmetric crypto")
     parser.add_argument("-Q", "--query", action="store",
                         help="Query a token ID against the logfile to see the details of that request\ne.g. -Q jwttool_46820e62fe25c10a3f5498e426a9f03a")
+    parser.add_argument("-th", "--throttle", action="store",
+                        help="Throttle the requests to a specified number of seconds between each request"),
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="When parsing and printing, produce (slightly more) verbose output.")
     args = parser.parse_args()
@@ -1894,6 +1901,9 @@ if __name__ == '__main__':
             os.makedirs(path)
     except:
         path = sys.path[0]
+
+    throttle = args.throttle if args.throttle else None
+
     logFilename = path+"/logs.txt"
     configFileName = path+"/jwtconf.ini"
     config = configparser.ConfigParser()
